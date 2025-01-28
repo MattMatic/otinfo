@@ -34,9 +34,6 @@
   OTInfo._readFont = function(data, offset) {
     var bin = OTInfo._bin;
     var tables = {};
-    tables.scripts = new Set();
-    tables.languages = new Set();
-    tables.features = new Set();
     offset += 4;
     var numTables = bin.readUint16(data, offset);
     offset += 8;
@@ -251,8 +248,6 @@
       offset += 4;
       var scriptOffset = bin.readUint16(data, offset);
       offset += 2;
-      //console.log('scriptTag', scriptTag);
-      tables.scripts.add(scriptTag);
       scriptList[scriptTag] = OTInfo.scriptTable.parse(data, scriptListStart + scriptOffset, length, tables);
       scriptCount--;
     }
@@ -266,7 +261,6 @@
     offset += 2;
     var langSysCount = bin.readUint16(data, offset);
     langSysCount = Math.min(langSysCount, 256);
-    //console.log('scriptTable', defaultLangSysOffset, langSysCount);
     offset += 2;
     var langRecords = new Set();
     while (langSysCount > 0) {
@@ -274,7 +268,6 @@
       offset += 4;
       var langSysOffset = bin.readUint16(data, offset);
       offset += 2;
-      tables.languages.add(langSysTag);
       langRecords.add(langSysTag);
       langSysCount--;
     }
@@ -294,7 +287,6 @@
       offset += 2;
       featureCount--;
       featureRecords.add(featureTag);
-      tables.features.add(featureTag);
     }
     return featureRecords;
   };

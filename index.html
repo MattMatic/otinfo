@@ -1,0 +1,161 @@
+<html>
+<head>
+  <title>OpenType Info JS Demo Tool</title>
+  <style>
+    body {
+      font-family: "Calibri";
+      background-color: #ccc;
+    }
+    table {
+      _table-layout: fixed;
+    }
+    table, th, td {
+      border-collapse: collapse;
+      border: 2px solid #eee;
+      padding: 3px;
+      vertical-align: top;
+    }
+    td {
+      word-wrap: break-all;
+    }
+    .val {
+      font-family: "Lucida Console";
+      color: #444;
+    }
+    .script {
+      font-family: "Lucida Console";
+      color: #822;
+    }
+    .lang {
+      font-family: "Lucida Console";
+      color: #228;
+    }
+  </style>
+</head>
+<body>
+<h1>OpenType Font Info</h1>
+
+<em>Filename:</em> <span id='FontFileName'></span>
+</br>
+
+<span id='FontInformation'>
+</span>
+
+</br>
+<em>Drag and drop an OpenType font onto this window...</em>
+</br>2025-01-27
+
+
+<script type="text/javascript" src="otinfo.js"></script>
+<script>
+
+//------------------------------
+// Drag and drop utilities
+//------------------------------
+function cancel(e) {e.stopPropagation();e.preventDefault();}
+function patchDragDrop(ele, foo) {
+  //const ele = document.getElementById(id);
+  ele.addEventListener('dragover', function(e) {
+    cancel(e);
+    //ele.style.backgroundColor = 'yellow';
+    }, false);
+  ele.addEventListener('dragleave', function(e) {
+    cancel(e);
+    //ele.style.backgroundColor = null;
+    }, false);
+  ele.addEventListener('drop', function(e) {
+    cancel(e);
+    const file = e.dataTransfer.files[0];
+    //ele.style.backgroundColor = null;
+    foo(file, ele);
+  });
+}
+document.addEventListener('dragover', cancel, false);
+document.addEventListener('dragleave', cancel, false);
+document.addEventListener('drop', cancel, false);
+
+function convertToTable(heading, t) {
+  var html = '';
+  html += '<h2>'+heading+'</h2>\r\n';
+  html += '<table>\r\n';
+  for (const key in t) {
+    html += '<tr><td>'+key+'</td><td class="val">'+t[key]+'</td></tr>\r\n';
+    }
+  html += '</table>\r\n';
+  return html;
+}
+
+function updateOtInfo(oti) {
+  var i = 0;
+  var html = '';
+  while (i < oti.length) {
+    var theFont = oti[i];
+    var fontName = theFont.name;
+
+    if (oti.length > 1) {
+      html += '<h1>Font '+i+'</h1>\r\n';
+    }
+
+    html += convertToTable('name', fontName);
+
+    if (theFont.GSUB) {
+      html += '<h2>GSUB</h2>\r\n';
+      var gtable = theFont.GSUB;
+      html += '<table>\r\n';
+      html += '<tr><td>featureListTable</td><td class="val">"'+[...gtable.featureListTable].join('", "')+'"</td></tr>\r\n';
+      html += '<tr><td>scriptTable</td><td><table>\r\n';
+      for (const key in gtable.scriptTable) {
+        html += '<tr><td class="script">'+key+'</td><td class="lang">\r\n';
+        html += '"'+[...gtable.scriptTable[key]].join('", "')+'"</td></tr>\r\n';
+      }
+      html += '</table></td></tr>\r\n';
+      html += '</table>\r\n';
+    }
+
+    if (theFont.GPOS) {
+      html += '<h2>GPOS</h2>\r\n';
+      var gtable = theFont.GPOS;
+      html += '<table>\r\n';
+      html += '<tr><td>featureListTable</td><td class="val">"'+[...gtable.featureListTable].join('", "')+'"</td></tr>\r\n';
+      html += '<tr><td>scriptTable</td><td><table>\r\n';
+      for (const key in gtable.scriptTable) {
+        html += '<tr><td class="script">'+key+'</td><td class="lang">\r\n';
+        html += '"'+[...gtable.scriptTable[key]].join('", "')+'"</td></tr>\r\n';
+      }
+      html += '</table></td></tr>\r\n';
+      html += '</table>\r\n';
+    }
+
+    if (theFont.head) html += convertToTable('head', theFont.head);
+    if (theFont.hhea) html += convertToTable('hhea', theFont.hhea);
+    if (theFont.maxp) html += convertToTable('maxp', theFont.maxp);
+    if (theFont.meta) html += convertToTable('meta', theFont.meta);
+    if (theFont.OS_2) html += convertToTable('OS/2', theFont.OS_2);
+
+    i++;
+  }
+  FontInformation.innerHTML = html;
+}
+
+function handleFontUpdate(file) {
+  if (!file) return;
+  FontFileName.innerText = file.name;
+  var reader = new FileReader();
+  reader.addEventListener("load", function () {
+    window.fontBlob = new Uint8Array(reader.result);
+    window.otinfo = OTInfo.parse(window.fontBlob);
+    console.log(window.otinfo[0]);
+    updateOtInfo(window.otinfo);
+  });
+  var fdate = new Date(file.lastModified);
+  reader.readAsArrayBuffer(file);
+}
+
+//patchDragDrop(document.getElementById('dropFont'), handleFontUpdate);
+patchDragDrop(document, handleFontUpdate);
+
+
+</script>
+
+</body>
+</html>
